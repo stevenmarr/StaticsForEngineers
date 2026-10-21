@@ -1,0 +1,34 @@
+# systemd unit for StaticsForEngineers
+# Installed by deploy/setup.sh to /etc/systemd/system/staticsforengineers.service
+#   sudo systemctl status staticsforengineers
+#   sudo journalctl -u staticsforengineers -f
+
+[Unit]
+Description=StaticsForEngineers (Node.js statics course)
+After=network.target
+
+[Service]
+Type=simple
+User=staticsforengineers
+Group=staticsforengineers
+WorkingDirectory=/opt/staticsforengineers
+Environment=NODE_ENV=production
+# Settings come from /opt/staticsforengineers/.env, which the app reads itself.
+ExecStart=/usr/bin/node /opt/staticsforengineers/server.js
+Restart=always
+RestartSec=3
+
+# Hardening: the app may only write to its own data folder.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/staticsforengineers/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
