@@ -111,4 +111,51 @@ CREATE TABLE IF NOT EXISTS user_prefs (
   PRIMARY KEY (user_id, key)
 );
 `);
-db.pragma('user_version = 2');
+
+// --- v3: Farm Engineering game (additive migration; new tables only, existing data untouched) ---
+db.exec(`
+CREATE TABLE IF NOT EXISTS game_levels (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  level TEXT NOT NULL,
+  best_stars INTEGER NOT NULL DEFAULT 0,
+  star_mask INTEGER NOT NULL DEFAULT 0,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  fails INTEGER NOT NULL DEFAULT 0,
+  completed_at INTEGER,
+  best_cost REAL,
+  last_design TEXT,
+  seed INTEGER NOT NULL DEFAULT 1,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, level)
+);
+CREATE TABLE IF NOT EXISTS game_xp (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,
+  ref TEXT,
+  xp INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_game_xp_once ON game_xp(user_id, source, ref);
+CREATE TABLE IF NOT EXISTS game_badges (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  badge TEXT NOT NULL,
+  earned_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, badge)
+);
+CREATE TABLE IF NOT EXISTS rush_rounds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  started_at INTEGER NOT NULL,
+  ends_at INTEGER NOT NULL,
+  score INTEGER NOT NULL DEFAULT 0,
+  combo INTEGER NOT NULL DEFAULT 0,
+  best_combo INTEGER NOT NULL DEFAULT 0,
+  answered INTEGER NOT NULL DEFAULT 0,
+  correct INTEGER NOT NULL DEFAULT 0,
+  current TEXT,
+  finished_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_rush_user ON rush_rounds(user_id, score);
+`);
+db.pragma('user_version = 3');
