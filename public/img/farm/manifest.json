@@ -1,0 +1,99 @@
+{
+ "goat-talk": {
+  "w": [
+   1600,
+   960,
+   480
+  ],
+  "ratio": 1.3333
+ },
+ "nubian-brown": {
+  "w": [
+   1200,
+   720,
+   360
+  ],
+  "ratio": 0.75
+ },
+ "white-grazing": {
+  "w": [
+   1200,
+   720,
+   360
+  ],
+  "ratio": 0.75
+ },
+ "black-kid": {
+  "w": [
+   1280,
+   960,
+   480
+  ],
+  "ratio": 1.3333
+ },
+ "two-kids": {
+  "w": [
+   1600,
+   960,
+   480
+  ],
+  "ratio": 1.3333
+ },
+ "white-profile": {
+  "w": [
+   1200,
+   720,
+   360
+  ],
+  "ratio": 0.75
+ },
+ "avatar-clove": {
+  "w": [
+   320,
+   160
+  ],
+  "ratio": 1
+ },
+ "avatar-captain": {
+  "w": [
+   320,
+   160
+  ],
+  "ratio": 1
+ },
+ "avatar-pepper": {
+  "w": [
+   320,
+   160
+  ],
+  "ratio": 1
+ },
+ "avatar-twins": {
+  "w": [
+   320,
+   160
+  ],
+  "ratio": 1
+ },
+ "avatar-juniper": {
+  "w": [
+   320,
+   160
+  ],
+  "ratio": 1
+ },
+ "banner-grazing": {
+  "w": [
+   1600,
+   800
+  ],
+  "ratio": 2.8827
+ },
+ "banner-twins": {
+  "w": [
+   1600,
+   800
+  ],
+  "ratio": 2.3401
+ }
+}
