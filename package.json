@@ -1,6 +1,6 @@
 {
   "name": "statics-for-engineers",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "StaticsForEngineers: a self-hosted, mastery-based course in engineering statics.",
   "main": "server.js",
   "private": true,
@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node server.js",
     "user": "node scripts/user.js",
-    "verify": "node scripts/verify-problems.js"
+    "verify": "node scripts/verify-problems.js",
+    "test": "node --test test/game.test.mjs && node test/smoke.mjs"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.1.0",

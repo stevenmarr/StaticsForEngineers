@@ -2,6 +2,7 @@
 const config = require('./config');
 const C = require('../content');
 const readiness = require('./readiness');
+const { pic, avatar } = require('./photos');
 
 const B = config.basePath;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -16,6 +17,7 @@ function layout({ title, body, user, csrf, active = '', scripts = [], reviewDue 
       <a href="${url('/')}" class="${active === 'dash' ? 'on' : ''}">Dashboard</a>
       <a href="${url('/units')}" class="${active === 'units' ? 'on' : ''}">Units</a>
       <a href="${url('/toolkit')}" class="${active === 'toolkit' ? 'on' : ''}">Math toolkit</a>
+      <a href="${url('/game')}" class="${active === 'game' ? 'on' : ''}">Farm game</a>
       <a href="${url('/review')}" class="${active === 'review' ? 'on' : ''}">Review${reviewDue ? ` <span class="badge">${reviewDue}</span>` : ''}</a>
       <a href="${url('/quiz')}" class="${active === 'quiz' ? 'on' : ''}">Quiz</a>
       <a href="${url('/settings')}" class="${active === 'settings' ? 'on' : ''}">Settings</a>
@@ -53,19 +55,33 @@ ${scripts.map((s) => `<script src="${url('/static/js/' + s)}"></script>`).join('
 function loginPage({ csrf, error, username }) {
   return layout({
     title: 'Log in', csrf, bodyClass: 'login-body',
-    body: `<section class="login">
-      <p class="kicker">Engineering statics · self-paced</p>
-      <h1>Build the foundation<br>for mechanical engineering.</h1>
-      <p class="deck">Ten units from vectors to moments of inertia, with worked examples, endless practice problems and mastery tracking.</p>
-      <form method="post" action="${url('/login')}" class="card form" autocomplete="on">
-        <input type="hidden" name="_csrf" value="${esc(csrf)}">
-        ${error ? `<p class="flash err" role="alert">${esc(error)}</p>` : ''}
-        <label>Username <input name="username" autocomplete="username" required value="${esc(username || '')}" autofocus></label>
-        <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="btn primary" type="submit">Log in</button>
-      </form>
+    body: `<section class="login split">
+      <figure class="login-photo">${pic('goat-talk', { eager: true, sizes: '(max-width: 860px) 100vw, 560px', fallbackWidth: 960 })}<figcaption>Sandy Boots Farm · Grapeland, Texas</figcaption></figure>
+      <div class="login-panel">
+        <p class="kicker">Engineering statics · self-paced</p>
+        <h1>Build the foundation<br>for mechanical engineering.</h1>
+        <p class="deck">Ten units from vectors to moments of inertia, endless practice, and a farm full of engineering problems to design your way through.</p>
+        <form method="post" action="${url('/login')}" class="card form" autocomplete="on">
+          <input type="hidden" name="_csrf" value="${esc(csrf)}">
+          ${error ? `<p class="flash err" role="alert">${esc(error)}</p>` : ''}
+          <label>Username <input name="username" autocomplete="username" required value="${esc(username || '')}" autofocus></label>
+          <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="btn primary" type="submit">Log in</button>
+        </form>
+      </div>
     </section>`,
   });
+}
+
+const FLAME = '<svg class="flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4-3 6-3 10a3 3 0 0 0 6 0c0-1.6-.8-2.6-1.4-3.6 2.6 1 4.4 3.7 4.4 6.6A6 6 0 0 1 6 15c0-5.4 5-7.4 6-13z" fill="currentColor"/></svg>';
+function streakBlock(st) {
+  const days = (st.week || []).map((d) => `<i class="${d.active ? 'on' : ''}" title="${esc(d.day)}"></i>`).join('');
+  return `<div class="streak ${st.current ? 'live' : ''}">${FLAME}<div><span class="v">${st.current}</span><span class="l">day streak${st.activeToday ? ' · done today' : st.current ? ' · keep it alive today' : ''}</span><span class="week" aria-label="Last 7 days">${days}</span></div></div>`;
+}
+function xpBlock(xp) {
+  return `<div class="xpbox"><div class="xp-top"><span class="lvl">Lv ${xp.level}</span><span class="title">${esc(xp.title)}</span></div>
+    <div class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${xp.pct}" aria-label="XP to next level"><span style="width:${xp.pct}%"></span></div>
+    <span class="l">${xp.xp} XP · ${xp.to - xp.xp} to level ${xp.level + 1}</span></div>`;
 }
 
 function bar(x, label) {
@@ -119,7 +135,7 @@ function readinessSection(s) {
     <div class="skillgrid">${list.map((x) => `<a class="skill ${x.status}" href="${url('/toolkit/' + x.slug)}"><span class="sname">${esc(x.short)}</span>${chip(x)}</a>`).join('')}</div></section>`;
 }
 
-function dashboard({ user, csrf, s }) {
+function dashboard({ user, csrf, s, g }) {
   const rec = s.recommended;
   const recHref = rec.kind === 'review' ? url('/review') : rec.kind === 'quiz' ? url('/quiz') : rec.kind === 'assess' ? url('/assessment') : rec.kind === 'skill' ? url(`/toolkit/${rec.slug}${rec.lesson ? '' : '/practice'}`) : url(`/units/${rec.unit}${rec.lesson ? '' : '/practice'}`);
   const mastered = s.units.filter((u) => u.mastered).length;
@@ -128,16 +144,21 @@ function dashboard({ user, csrf, s }) {
   const next = s.nextReviewAt && !s.reviewDue ? `next item ${new Date(s.nextReviewAt).toLocaleString('en-US', { timeZone: config.timeZone, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : '';
   return layout({
     title: 'Dashboard', user, csrf, active: 'dash', reviewDue: s.reviewDue,
-    body: `<section class="hero">
-      <p class="kicker">Welcome back, ${esc(user.username)}</p>
-      <h1>Your statics dashboard</h1>
+    body: `<section class="hero farm-banner">
+      ${pic('banner-grazing', { cls: 'fb-bg', sizes: '(max-width: 760px) 800px, 1180px', fallback: 1600, eager: true })}
+      <div class="fb-inner">
+        <div class="fb-text"><p class="kicker">Welcome back, ${esc(user.username)}</p><h1>Your statics dashboard</h1></div>
+        <div class="fb-meters">${streakBlock(s.streak)}${g ? xpBlock(g.xp) : ''}</div>
+      </div>
+    </section>
+    <section class="hero">
       <div class="card next">
         <div><p class="kicker">Recommended next</p><p class="big">${esc(rec.text)}</p></div>
         <a class="btn primary" href="${recHref}">Go</a>
       </div>
     </section>
+    ${g ? gameCard(g) : ''}
     <section class="stats">
-      <div class="stat"><span class="v">${s.streak.current}</span><span class="l">day streak${s.streak.activeToday ? ' ✓ today' : ''}</span></div>
       <div class="stat"><span class="v">${mastered}<small>/10</small></span><span class="l">units mastered</span></div>
       <div class="stat"><span class="v">${pct(overall)}%</span><span class="l">overall mastery</span></div>
       <div class="stat"><span class="v">${s.totals.attempts}</span><span class="l">problems solved · ${acc}% first-try</span></div>
@@ -150,6 +171,17 @@ function dashboard({ user, csrf, s }) {
       <div class="grid">${C.units.map((u) => unitCard(u, s)).join('')}</div>
     </section>`,
   });
+}
+
+function gameCard(g) {
+  const nx = g.levels.find((l) => l.next) || g.levels.find((l) => l.stars < 3) || g.levels[0];
+  return `<section class="card game-cta">
+    ${avatar(nx.character.img, 88, 'lg')}
+    <div class="gc-text"><p class="kicker">Farm Engineering · ${g.starsTotal}/${g.starsMax} ★</p>
+      <p class="big">Level ${nx.num}: ${esc(nx.title)}</p>
+      <p class="muted small">${esc(nx.tagline)} Design it, predict it, then watch the statics decide.</p></div>
+    <div class="row gc-btns"><a class="btn primary" href="${url('/game/' + nx.id)}">Play</a><a class="btn ghost" href="${url('/game')}">Level map</a><a class="btn ghost" href="${url('/game/rush')}">Goat Rush</a></div>
+  </section>`;
 }
 
 function unitsIndex({ user, csrf, s }) {
@@ -397,7 +429,7 @@ function assessmentResultsPage({ user, csrf, s, results }) {
 }
 
 function errorPage({ user, csrf, status, message }) {
-  return layout({ title: 'Error', user, csrf, body: `<h1>${status}</h1><p class="muted">${esc(message)}</p><p><a class="btn" href="${url('/')}">Back to the dashboard</a></p>` });
+  return layout({ title: 'Error', user, csrf, body: `<section class="errpage">${pic('nubian-brown', { cls: 'err-photo', sizes: '240px', fallback: 360, alt: 'A brown Nubian goat looking puzzled' })}<div><p class="kicker">${status === 404 ? 'This page wandered off' : 'Something broke'}</p><h1>${status}</h1><p class="muted">${esc(message)}</p><p><a class="btn" href="${url('/')}">Back to the dashboard</a></p></div></section>` });
 }
 
 module.exports = { layout, loginPage, dashboard, unitsIndex, lessonPage, practicePage, reviewPage, quizPage, settingsPage, errorPage, toolkitIndex, toolkitLessonPage, toolkitPracticePage, assessmentPage, assessmentResultsPage, esc, url };

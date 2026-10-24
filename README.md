@@ -10,11 +10,21 @@ cross products, "integrals as sums"), it starts with a **math readiness check**.
 have are marked done; gaps get a short **Math toolkit** lesson that is suggested just before the unit
 that needs it.
 
+Version 1.2 adds **Farm Engineering**, a game mode set on Sandy Boots Farm (Grapeland, Texas). You
+design real fixes for the farm (a hay hoist, a seesaw for the kids, a creek truss bridge, a loading
+ramp…), predict what the statics will say, then run it and watch it hold or fail. It has XP, stars,
+badges, streaks and a 60-second "Goat Rush" round. Photos of the farm's Nubian goats appear on the
+login page, the dashboard and in the game.
+
 It is designed to live at **https://performance-video.com/StaticsForEngineers/**, next to the existing
 site on the same DigitalOcean droplet. Nothing about the existing site changes except one `include` line
 that you add yourself.
 
+![Login](screenshots/v12-login.png)
+
 ![Dashboard](screenshots/02-dashboard.png)
+
+![Creek Truss Bridge](screenshots/v12-success-debrief.png)
 
 ---
 
@@ -22,8 +32,10 @@ that you add yourself.
 
 1. [What's inside](#whats-inside)
    * [Math readiness check & Math toolkit](#math-readiness-check--math-toolkit)
+   * [Farm Engineering (game mode)](#farm-engineering-game-mode)
 2. [Put it on the droplet (step by step)](#put-it-on-the-droplet-step-by-step)
    * [Updating the live site (update script)](#updating-the-live-site-update-script)
+   * [Updating from GitHub](#updating-from-github)
    * [Reverse proxy in Docker (Caddy)](#reverse-proxy-in-docker-caddy)
 3. [Connect Nginx (the one manual edit)](#connect-nginx-the-one-manual-edit)
 4. [HTTPS](#https)
@@ -106,13 +118,71 @@ covers 10 skills:
   practice problems that use the skill carry a one-line reminder with a link. Nothing is locked; you
   can always keep going.
 
+### Farm Engineering (game mode)
+
+Menu → **Farm game**. Each level is a design problem, not a worksheet:
+
+1. **Story and goal** from one of the farm's goats.
+2. **Design** in an interactive picture: drag the round handles (mouse or touch) or use the sliders and
+   menus. Geometry and cost update live, but nothing is solved for you yet.
+3. **Predict first** (optional): enter the key force or position yourself. A close prediction earns
+   the third star and bonus XP.
+4. **Run it.** The scene animates: ropes snap, logs tip, hooves slip, shelters blow over, or it all
+   holds.
+5. **Debrief**: the actual numbers, the free-body reasoning in plain steps, and a link to the unit lesson.
+
+| # | Level | Unit | What you do |
+|---|---|---|---|
+| 1 | Hay Hoist | 2 Particle equilibrium | Place two rope anchors and pick a rope so a hanging bale stays out of Clove's reach without snapping a rope. |
+| 2 | Teeter-Goat | 3 Moments | Slide the stump under a plank so a 55 kg doe balances two kids (the plank's own weight counts). |
+| 3 | Feed-Trough Beam | 4–5 Distributed loads, rigid bodies | Place two posts under a 5 m log carrying a trough and a bale. Posts can't pull, and each has a rating. |
+| 4 | **Creek Truss Bridge** (flagship) | 6 Trusses | Build a truss joint by joint (pine, oak or steel) to carry a moving hay cart. The stiffness solver checks every position; overloaded members glow red and snap. |
+| 5 | A-frame Hay Rack | 7 Frames | Choose the spread and the tie height of a hinged A-frame. The tie tension comes from moments about the apex. |
+| 6 | Loading Ramp | 8 Friction | Choose the ramp angle and surface so Clove walks into the trailer: tan θ ≤ μs, board length, cost. |
+| 7 | Shade Shelter | 9 Centroids | Add and slide concrete blocks so a gust can't tip the kids' shelter about its leeward skid. |
+
+* **Stars per level:** ★ it works · ★ efficient (cheapest working choice, under budget, fewest blocks,
+  or within 1 cm) · ★ prediction within tolerance. **New scenario** re-rolls the numbers (masses,
+  loads, heights).
+* **XP and player level:** 50 XP per new star, 50 for a first clear, 10 per new scenario solved, 20
+  per accurate prediction, Goat Rush score ÷ 25, 10 per first-try practice answer and 150 per mastered
+  unit. Levels run from Barn Hand to Master of Statics. Repeating a win gives no extra XP. The
+  dashboard shows the level and XP bar next to a bigger streak counter with the last 7 days.
+* **Badges:** First Build, Back to the Drawing Board (pass a level that failed on you), Blue Ribbon,
+  Sharp Pencil, Bullseye, Creek Crosser, Penny Pincher, Whole Farm, Grand Champion, Herd Stampede (×5
+  combo), Goat Rush 1500, 3- and 7-day streaks, Unit Master.
+* **Soft gating:** levels follow the units. A level whose unit isn't unlocked yet says so and links the
+  lesson, but it is still playable.
+* **Truss Sandbox:** free build on the creek grid with live member forces (+ tension / − compression),
+  support reactions, m + r vs 2j, sliders for the cart load, position and dead load, and an animated
+  crossing.
+* **Goat Rush:** 60 seconds of concept checks (from unlocked units) and quick toolkit math. Every 3 in a
+  row raises the combo, up to ×5. The server keeps the clock and the score. Rush answers don't affect
+  mastery or the review queue.
+* **The physics** lives in `public/js/game/physics.js` and `levels.js`. The same code runs in the browser
+  (animation) and on the server, which re-scores every submitted design, so stars and XP can't be faked from the browser. The truss
+  solver is the direct stiffness method: Gaussian elimination with partial pivoting, with a singular
+  matrix reported as a mechanism. Member ratings are game values: compression capacity falls as
+  1/L² (buckling), capped by crushing strength. `test/game.test.mjs` checks it against hand-calculated
+  textbook trusses (the lesson triangle, a Warren and a Pratt truss, a mechanism, an indeterminate
+  truss) and checks every level's pass, fail and star logic.
+
+**Photos.** The originals are resized and recompressed by `scripts/build-images.py` into
+`public/img/farm/`: WebP plus JPG, three sizes, square character portraits and two wide banners. Every
+output is a brand-new image, so **no EXIF, GPS or camera metadata** is carried over. Pages use `<picture>`
+with `srcset`, fixed width and height, and `loading="lazy"`; only the login photo loads eagerly. Photos
+appear on the login page, the dashboard banner, the game map and level characters, the celebration
+pop-ups (including "unit mastered" during practice), the empty review queue and the error page.
+Lesson and practice pages stay photo-free.
+
 ### File layout
 
 ```
 statics-for-engineers/
 ├── server.js                 Express app (routes, login, API)
 ├── src/                      config, database (+ migrations), sessions, users, progress/mastery logic,
-│                             readiness check (readiness.js), page templates
+│                             readiness check (readiness.js), page templates, game.js (XP, badges,
+│                             Goat Rush), gameViews.js, photos.js (responsive <picture> helper)
 ├── content/
 │   ├── units/u01.js … u10.js lessons + problem generators for each unit
 │   ├── skills.js             the 10 math skills, unit/problem → skill map, symbol glossary
@@ -120,9 +190,14 @@ statics-for-engineers/
 │   ├── helpers.js, svg.js    math helpers and diagram drawing
 │   └── index.js              unit registry, grading, rendering
 ├── public/                   CSS, browser JS, favicon, font CSS
+│   ├── js/game/              physics.js (truss solver), levels.js (7 levels), game.js (player + sandbox)
+│   ├── js/rush.js            Goat Rush
+│   └── img/farm/             optimized farm photos (no EXIF/GPS)
 ├── scripts/user.js           add / reset / delete / list users
 ├── scripts/verify-problems.js  checks every problem generator against independent solvers
+├── scripts/build-images.py   rebuilds public/img/farm from the original photos (needs Pillow)
 ├── test/smoke.mjs            end-to-end HTTP test
+├── test/game.test.mjs        truss solver + level logic tests (node --test)
 ├── deploy/
 │   ├── setup.sh              installer for Ubuntu (run with sudo)
 │   ├── staticsforengineers.service   systemd unit
@@ -162,7 +237,7 @@ cd statics-for-engineers
 sudo bash deploy/setup.sh
 ```
 
-It asks for the **username and password** of the first account (for example `Andrew`). Typing the
+It asks for the **username and password** of the first account (for example `student`). Typing the
 password shows nothing on screen; that's normal. Then it:
 
 * installs **Node.js 24 LTS** if Node 22+ isn't already there;
@@ -290,7 +365,7 @@ All commands run on the droplet.
 cd /opt/staticsforengineers
 sudo -u staticsforengineers node scripts/user.js list
 sudo -u staticsforengineers node scripts/user.js add Steven
-sudo -u staticsforengineers node scripts/user.js reset Andrew     # also signs that user out everywhere
+sudo -u staticsforengineers node scripts/user.js reset student     # also signs that user out everywhere
 sudo -u staticsforengineers node scripts/user.js delete Steven
 ```
 
@@ -339,6 +414,20 @@ Database changes are applied automatically when the service starts. They only *a
 (`CREATE TABLE IF NOT EXISTS`), so existing users, attempts, mastery and unlocks are kept. To roll back,
 stop the service, unpack the backup (`sudo tar -xzf /root/sfe-data-backup-….tar.gz -C /opt/staticsforengineers`),
 reinstall the previous version, and start it.
+
+### Updating from GitHub
+
+The code is at https://github.com/stevenmarr/StaticsForEngineers (branch `main`). On the droplet:
+
+```bash
+sudo bash /opt/staticsforengineers/deploy/update-from-git.sh
+```
+
+It backs up `data/` and `.env`, fetches and resets the code to `origin/main`, runs `npm ci --omit=dev`,
+restarts the service and checks `/healthz`. `.env` and `data/` are git-ignored, so the update never
+touches them. Version 1.2 adds four tables (`game_levels`, `game_xp`, `game_badges`, `rush_rounds`)
+when it starts (database `user_version` 3). Nothing existing is changed, and all earlier progress
+counts toward XP.
 
 ### Reverse proxy in Docker (Caddy)
 
@@ -405,7 +494,7 @@ sudo rm -rf /opt/staticsforengineers && sudo userdel staticsforengineers
 | `better-sqlite3` errors during install | Use Node 22 or 24 LTS (`node -v`). Install build tools with `sudo apt install -y build-essential python3`, then run `sudo bash deploy/setup.sh` again. |
 | Port 3117 already used | Set `PORT=` to another number in `.env`, re-run `setup.sh` (it rewrites the port in the snippet), then `sudo nginx -t && sudo systemctl reload nginx`. |
 | "Too many login attempts" | Wait 15 minutes, or restart the service. |
-| Forgot password | `sudo -u staticsforengineers node /opt/staticsforengineers/scripts/user.js reset Andrew` |
+| Forgot password | `sudo -u staticsforengineers node /opt/staticsforengineers/scripts/user.js reset student` |
 
 Want a different address than `/StaticsForEngineers`? Set `BASE_PATH=` in `.env`, then change both
 `location` lines in `/etc/nginx/snippets/staticsforengineers.conf` to match, and restart and reload.
@@ -425,7 +514,7 @@ sudo mkdir -p /opt/staticsforengineers && sudo cp -r ~/statics-for-engineers/. /
 cd /opt/staticsforengineers
 sudo cp .env.example .env && sudo nano .env
 #   SESSION_SECRET=<paste output of: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))">
-#   DEFAULT_USER=Andrew
+#   DEFAULT_USER=student
 #   DEFAULT_PASS=<the first password>
 #   COOKIE_SECURE=true
 sudo npm ci --omit=dev
@@ -477,7 +566,9 @@ Checks:
 npm run verify              # all 134 problem types x 300 random seeds, cross-checked with independent solvers;
                             # also checks the skill map, glossary, every lesson's math, and the check's logic
 node test/smoke.mjs         # throwaway server: login, pages, API, mastery, readiness check, gating,
-                            # toolkit, migration of a pre-toolkit database, persistence across restart
+                            # toolkit, game pages + APIs (XP, badges, Goat Rush), migrations, restart
+node --test test/game.test.mjs   # truss solver vs. hand calculations, every level's pass/fail/stars
+npm test                    # game tests + smoke test
 ```
 
 Physics conventions used throughout: g = 9.81 m/s², counter-clockwise moments positive, truss member

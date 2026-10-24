@@ -10,6 +10,8 @@ const users = require('./src/users');
 const progress = require('./src/progress');
 const readiness = require('./src/readiness');
 const V = require('./src/views');
+const GV = require('./src/gameViews');
+const game = require('./src/game');
 const C = require('./content');
 
 const B = config.basePath;
@@ -125,7 +127,8 @@ router.get('/', (req, res) => {
   // First visit after login: offer the math readiness check once (it stays recommended until taken).
   const info = readiness.assessmentInfo(req.user.id);
   if (!info.taken && !info.prompted) { readiness.setPref(req.user.id, 'assess_prompted', 1); return res.redirect(B + '/assessment'); }
-  res.send(V.dashboard(ctx(req)));
+  const c = ctx(req);
+  res.send(V.dashboard({ ...c, g: game.state(req.user.id, c.s) }));
 });
 router.get('/units', (req, res) => res.send(V.unitsIndex(ctx(req))));
 router.get('/units/:n', (req, res, next) => {
@@ -278,6 +281,34 @@ router.post('/api/quiz/:id/finish', checkCsrf, (req, res) => {
   if (!quiz.finished_at) db.prepare('UPDATE quizzes SET finished_at = ?, score = ? WHERE id = ?').run(Date.now(), correct, quiz.id);
   const history = db.prepare('SELECT score, total, finished_at FROM quizzes WHERE user_id = ? AND finished_at IS NOT NULL ORDER BY id DESC LIMIT 5').all(req.user.id);
   res.json({ correct, total: quiz.total, history });
+});
+
+// ---------- Farm Engineering game ----------
+router.get('/game', (req, res) => { const c = ctx(req); res.send(GV.gameMap({ ...c, g: game.state(req.user.id, c.s) })); });
+router.get('/game/sandbox', (req, res) => res.send(GV.sandboxPage(ctx(req))));
+router.get('/game/rush', (req, res) => { const c = ctx(req); res.send(GV.rushPage({ ...c, g: game.state(req.user.id, c.s) })); });
+router.get('/game/:id', (req, res, next) => {
+  const def = game.LEVELS.find((l) => l.id === req.params.id);
+  if (!def) return next();
+  const c = ctx(req), g = game.state(req.user.id, c.s);
+  res.send(GV.levelPage({ ...c, g, def, level: g.levels.find((l) => l.id === def.id) }));
+});
+router.get('/api/game/state', (req, res) => res.json(game.state(req.user.id)));
+router.post('/api/game/attempt', checkCsrf, (req, res) => {
+  const out = game.attempt(req.user.id, req.body || {});
+  if (out.error) return res.status(400).json(out);
+  res.json(out);
+});
+router.post('/api/game/rush/start', checkCsrf, (req, res) => res.json(game.rushStart(req.user.id)));
+router.post('/api/game/rush/answer', checkCsrf, (req, res) => {
+  const out = game.rushAnswer(req.user.id, req.body || {});
+  if (out.error) return res.status(out.resync ? 409 : 404).json(out);
+  res.json(out);
+});
+router.post('/api/game/rush/finish', checkCsrf, (req, res) => {
+  const out = game.rushFinish(req.user.id, (req.body || {}).id);
+  if (out.error) return res.status(404).json(out);
+  res.json(out);
 });
 
 router.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));

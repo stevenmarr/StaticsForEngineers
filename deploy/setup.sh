@@ -71,7 +71,7 @@ if [ -f "$APP_DIR/.env" ]; then
 else
   say "Creating $APP_DIR/.env"
   echo "Choose the login for the first account (you can add more later)."
-  read -r -p "  Username [Andrew]: " U; U=${U:-Andrew}
+  read -r -p "  Username [student]: " U; U=${U:-student}
   while true; do
     read -r -s -p "  Password (min 8 characters): " P1; echo
     read -r -s -p "  Repeat password: " P2; echo

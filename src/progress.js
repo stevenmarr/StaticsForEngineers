@@ -75,7 +75,9 @@ function streak(userId) {
   let t = Date.now();
   if (!days.has(dayKey(t))) t -= DAY; // streak still alive if he practiced yesterday
   while (days.has(dayKey(t))) { n++; t -= DAY; }
-  return { current: n, activeToday: days.has(dayKey()) };
+  const week = [];
+  for (let i = 6; i >= 0; i--) { const k = dayKey(Date.now() - i * DAY); week.push({ day: k, active: days.has(k) }); }
+  return { current: n, activeToday: days.has(dayKey()), week };
 }
 
 function updateReview(userId, def, correct, now) {

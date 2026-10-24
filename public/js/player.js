@@ -142,7 +142,7 @@
         if (mode === 'quiz') showSolution(form, true);
         if (p.kind === 'mc' && mode === 'quiz') form.querySelectorAll('.choice').forEach((lab) => { if (parseInt(lab.querySelector('input').value, 10) === r.correctChoice) lab.classList.add('right'); });
       }
-      if (r.newlyUnlocked && r.newlyUnlocked.length) msg += `<div class="unlock">🔓 Unit ${r.newlyUnlocked.join(', ')} unlocked! <a href="${SFE.url('/units/' + r.newlyUnlocked[0])}">Go to the lesson →</a></div>`;
+      if (r.newlyUnlocked && r.newlyUnlocked.length) msg += `<div class="unlock celebrate"><picture><source type="image/webp" srcset="${SFE.url('/static/img/farm/two-kids-480.webp')} 480w, ${SFE.url('/static/img/farm/two-kids-960.webp')} 960w" sizes="(max-width: 640px) 100vw, 320px"><img src="${SFE.url('/static/img/farm/two-kids-480.jpg')}" width="480" height="360" alt="Two Nubian kids meeting nose to nose" loading="lazy"></picture><div><p class="kicker">Unit ${r.unit} mastered</p><p><strong>Unit ${r.newlyUnlocked.join(', ')} unlocked!</strong> The herd is proud of you. <a href="${SFE.url('/units/' + r.newlyUnlocked[0])}">Go to the lesson →</a> · <a href="${SFE.url('/game')}">See what it unlocks in the farm game</a></p></div></div>`;
       feedback(form, r.correct ? 'ok' : 'err', msg);
       if (mode === 'practice' && !skill && r.unit === unit) { setMastery(r.unitMastery); if (r.firstAttempt) markType(p.id, r.correct, r.typeScore); }
       if (mode === 'practice' && skill && r.skill === skill) { setMastery(r.skillMastery); if (r.firstAttempt) markType(p.id, r.correct, r.typeScore); }
@@ -195,7 +195,7 @@
       const r = await SFE.api('/api/review/next' + (current ? `?exclude=${encodeURIComponent(current.problem.id)}` : ''));
       if (r.done) {
         const when = r.nextReviewAt ? new Date(r.nextReviewAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
-        root.innerHTML = `<div class="empty"><h2>All caught up 🎉</h2><p class="muted">${r.queued ? `${r.queued} item(s) are scheduled for later${when ? `; the next one comes due ${when}` : ''}.` : 'Nothing is waiting in your review queue. Problems you miss will show up here.'}</p><p><a class="btn" href="${SFE.url('/')}">Back to the dashboard</a></p></div>`;
+        root.innerHTML = `<div class="empty"><picture class="empty-photo"><source type="image/webp" srcset="${SFE.url('/static/img/farm/black-kid-480.webp')}"><img src="${SFE.url('/static/img/farm/black-kid-480.jpg')}" width="480" height="360" alt="A black Nubian kid looking at the camera" loading="lazy"></picture><h2>All caught up 🎉</h2><p class="muted">${r.queued ? `${r.queued} item(s) are scheduled for later${when ? `; the next one comes due ${when}` : ''}.` : 'Nothing is waiting in your review queue. Problems you miss will show up here.'}</p><p><a class="btn" href="${SFE.url('/')}">Back to the dashboard</a></p></div>`;
         current = null;
         return;
       }
