@@ -28,6 +28,26 @@ that you add yourself.
 
 ---
 
+## Learning Hub cutover (2026-10)
+
+Andrew’s curricula continue in the **Marr Learning Hub**:
+
+* Repo: https://github.com/stevenmarr/learning
+* Live path (when deployed): https://performance-video.com/learning/
+* Statics module inside the hub: `/learning/statics` (Farm game + math toolkit preserved)
+
+This StaticsForEngineers app (port 3117, `/StaticsForEngineers`) can keep running until you cut over. Optional Caddy redirects:
+
+```
+redir /StaticsForEngineers /learning/statics 302
+redir /StaticsForEngineers/* /learning/statics 302
+```
+
+Hub updates: `bash /opt/learning/deploy/update-from-git.sh` (no `set -e`).
+
+---
+
+
 ## Contents
 
 1. [What's inside](#whats-inside)
